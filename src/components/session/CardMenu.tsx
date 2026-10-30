@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { Activity } from '@/types'
 import { useAppStore } from '@/store/useAppStore'
 import { useUiStore } from '@/store/useUiStore'
-import { MINUTE } from '@/lib/time'
 
 type Props = {
   activity: Activity
@@ -12,12 +11,14 @@ type Props = {
 export function CardMenu({ activity }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const adjustTime = useAppStore((s) => s.adjustTime)
   const removeActivity = useAppStore((s) => s.removeActivity)
+  const completeActivity = useAppStore((s) => s.completeActivity)
   const isActive = useAppStore((s) => s.session.activeId === activity.id)
   const openBlock = useUiStore((s) => s.openBlockPicker)
   const openTransfer = useUiStore((s) => s.openTransfer)
   const openEdit = useUiStore((s) => s.openEdit)
+
+  const isDone = !isActive && activity.usedMs >= activity.plannedMs
 
   useEffect(() => {
     if (!open) return
@@ -53,22 +54,21 @@ export function CardMenu({ activity }: Props) {
           role="menu"
           className="absolute bottom-9 right-0 z-30 w-48 overflow-hidden rounded-xl border border-stone-700 bg-stone-800 py-1 shadow-xl"
         >
-          <button role="menuitem" className={item} onClick={() => run(() => openBlock(activity.id))}>
+          <button
+            role="menuitem"
+            className={item}
+            disabled={isDone}
+            onClick={() => run(() => openBlock(activity.id))}
+          >
             ⏳ Ativar por um tempo…
           </button>
           <button
             role="menuitem"
             className={item}
-            onClick={() => run(() => adjustTime(activity.id, 5 * MINUTE))}
+            disabled={isDone}
+            onClick={() => run(() => completeActivity(activity.id))}
           >
-            ➕ +5 min
-          </button>
-          <button
-            role="menuitem"
-            className={item}
-            onClick={() => run(() => adjustTime(activity.id, -5 * MINUTE))}
-          >
-            ➖ −5 min
+            ✓ Concluir
           </button>
           <button
             role="menuitem"

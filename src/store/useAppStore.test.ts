@@ -161,6 +161,34 @@ describe('fluxo de sessão', () => {
     expect(s.activities.find((x) => x.id === b)!.plannedMs).toBe(30 * MINUTE)
   })
 
+  it('concluir atividade ativa consolida e zera o restante', () => {
+    const store = useAppStore.getState()
+    store.setAvailable(HOUR)
+    store.addActivity('A', 30 * MINUTE)
+    store.addActivity('B', 30 * MINUTE)
+    store.startSession()
+    const [a] = ids()
+    useAppStore.getState().activate(a)
+    setNow(nowValue + 10 * MINUTE)
+    useAppStore.getState().completeActivity(a)
+    const s = useAppStore.getState().session
+    expect(s.activeId).toBeNull()
+    const aAct = s.activities.find((x) => x.id === a)!
+    expect(aAct.usedMs).toBe(30 * MINUTE) // marcada como se todo o tempo tivesse passado
+    expect(getRemainingMs(aAct, s, nowValue)).toBe(0)
+  })
+
+  it('concluir atividade inativa a marca como concluída', () => {
+    const store = useAppStore.getState()
+    store.setAvailable(HOUR)
+    store.addActivity('A', 20 * MINUTE)
+    store.startSession()
+    const [a] = ids()
+    useAppStore.getState().completeActivity(a)
+    const aAct = useAppStore.getState().session.activities.find((x) => x.id === a)!
+    expect(aAct.usedMs).toBe(20 * MINUTE)
+  })
+
   it('distribuir sobra proporcionalmente', () => {
     const store = useAppStore.getState()
     store.setAvailable(120 * MINUTE)

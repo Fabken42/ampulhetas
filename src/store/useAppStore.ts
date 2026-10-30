@@ -139,6 +139,7 @@ type AppState = {
   adjustTime: (id: string, deltaMs: number) => void
   transferTime: (fromId: string, toId: string, ms: number) => void
   distributeUnallocated: (mode: 'proportional' | { toId: string }) => void
+  completeActivity: (id: string) => void
 
   // desfazer
   undoLastSwitch: () => void
@@ -375,6 +376,18 @@ export const useAppStore = create<AppState>()(
             )
           }
           return { session: { ...s.session, activities } }
+        }),
+
+      completeActivity: (id) =>
+        set((s) => {
+          const now = Date.now()
+          // se é a ativa, consolida o tempo corrido e pausa a sessão primeiro
+          let session = s.session.activeId === id ? pauseSession(s.session, now) : s.session
+          const activities = session.activities.map((a) =>
+            a.id === id ? { ...a, usedMs: Math.max(a.plannedMs, a.usedMs) } : a,
+          )
+          session = { ...session, activities }
+          return { session }
         }),
 
       undoLastSwitch: () =>

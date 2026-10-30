@@ -24,8 +24,8 @@ export function ActivityCard({ activity, index, now }: Props) {
   const hex = colorHex(activity.color, light)
   const shortcut = index < 9 ? index + 1 : null
 
-  const blockRemaining =
-    isActive && session.blockEndsAt != null ? session.blockEndsAt - now : null
+  const blockRemaining = isActive && session.blockEndsAt != null ? session.blockEndsAt - now : null
+  const canDecrement = remaining > 0 // nada a tirar quando já zerou
 
   return (
     <div
@@ -33,14 +33,10 @@ export function ActivityCard({ activity, index, now }: Props) {
         isActive
           ? 'border-transparent shadow-lg'
           : isZero
-            ? 'border-stone-800 opacity-70'
+            ? 'border-stone-800 opacity-80'
             : 'border-stone-800 hover:border-stone-600'
       }`}
-      style={
-        isActive
-          ? { boxShadow: `0 0 0 2px ${hex}, 0 8px 30px -8px ${hex}80` }
-          : undefined
-      }
+      style={isActive ? { boxShadow: `0 0 0 2px ${hex}, 0 8px 30px -8px ${hex}80` } : undefined}
     >
       {/* preenchimento de "areia" que esvazia conforme o tempo passa */}
       <div
@@ -89,9 +85,7 @@ export function ActivityCard({ activity, index, now }: Props) {
           <div className="mt-0.5 text-xs text-stone-500">
             de {formatDuration(activity.plannedMs)}
             {blockRemaining != null && blockRemaining > 0 && (
-              <span className="ml-2 text-stone-400">
-                · Bloco: {formatClock(blockRemaining)}
-              </span>
+              <span className="ml-2 text-stone-400">· Bloco: {formatClock(blockRemaining)}</span>
             )}
           </div>
         </div>
@@ -100,7 +94,10 @@ export function ActivityCard({ activity, index, now }: Props) {
           {isZero ? (
             <span className="rounded-full bg-stone-800 px-2 py-0.5 text-stone-400">Concluída</span>
           ) : isActive ? (
-            <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${hex}30`, color: hex }}>
+            <span
+              className="rounded-full px-2 py-0.5"
+              style={{ backgroundColor: `${hex}30`, color: hex }}
+            >
               Em andamento · toque para pausar
             </span>
           ) : (
@@ -109,17 +106,29 @@ export function ActivityCard({ activity, index, now }: Props) {
         </div>
       </button>
 
-      {/* ações rápidas / menu */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-1">
-        {isZero && (
+      {/* barra de ações: ajuste rápido de tempo + menu */}
+      <div className="relative flex items-center justify-between gap-1 border-t border-stone-800/80 px-3 py-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => adjustTime(activity.id, 5 * MINUTE)}
-            className="rounded-lg bg-stone-800 px-2 py-1 text-xs font-semibold text-amber-400 hover:bg-stone-700"
+            aria-label={`Tirar 5 minutos de ${activity.name}`}
+            disabled={!canDecrement}
+            onClick={() => adjustTime(activity.id, -5 * MINUTE)}
+            className="rounded-lg bg-stone-800 px-2.5 py-1 text-xs font-semibold text-stone-300 hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            +5 min
+            −5
           </button>
-        )}
+          <button
+            type="button"
+            aria-label={`${isZero ? 'Reabrir com' : 'Adicionar'} 5 minutos a ${activity.name}`}
+            onClick={() => adjustTime(activity.id, 5 * MINUTE)}
+            className="rounded-lg bg-stone-800 px-2.5 py-1 text-xs font-semibold hover:bg-stone-700"
+            style={{ color: isZero ? '#f59e0b' : undefined }}
+          >
+            +5
+          </button>
+          <span className="ml-1 text-xs text-stone-600">min</span>
+        </div>
         <CardMenu activity={activity} />
       </div>
     </div>
